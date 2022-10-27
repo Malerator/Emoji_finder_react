@@ -1,20 +1,40 @@
-import { useState } from "react";
-import { data } from "./emoji.js";
+import { useState, useEffect } from "react";
+// import { data } from "./emoji.js";
 import { Header } from "./Components/Header.jsx";
 import { Main } from "./Components/Main.jsx";
 import { Card } from "./Components/Card.jsx";
 import { Pagination } from "./Components/Pagination.jsx";
+import { Preloader } from "./Components/Preloader.jsx";
+import { Alert } from "./Components/Alert/Alert";
 
 function App() {
+  const [emoji, setEmoji] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [perPage, setPerPage] = useState(12);
   const [currentPage, setCurrentPage] = useState(1);
   const [value, setValue] = useState("");
-  console.log(perPage);
+
+  useEffect(() => {
+    async function getEmoji() {
+      try {
+        const url = "https://emoji-api-app.herokuapp.com/1";
+        const data = await (await fetch(url)).json();
+        setEmoji(data);
+        setIsLoading(false);
+      } catch (e) {
+        setIsError(true);
+        console.log(e);
+        setIsLoading(false);
+      }
+    }
+    getEmoji();
+  }, []);
 
   let lastCard = currentPage * perPage;
   let firstCard = lastCard - perPage;
 
-  const search = data.filter(
+  const search = emoji.filter(
     (el) => el.keywords.includes(value) || el.title.includes(value)
   );
 
@@ -28,10 +48,7 @@ function App() {
     setValue(userText);
   };
 
-  console.log(search);
-
   const slice = search.slice(firstCard, lastCard);
-  console.log(slice);
 
   function getPerPage(event) {
     setPerPage(event.target.value);
@@ -40,6 +57,8 @@ function App() {
   return (
     <>
       <Header value={value} onSubmit={formHandler} onInput={inputHandler} />
+      {isLoading && <Preloader />}
+      {isError && <Alert />}
       <Main>
         {slice.map((elem) => (
           <Card
